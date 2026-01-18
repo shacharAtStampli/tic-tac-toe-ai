@@ -416,6 +416,13 @@
                     <option value="2">2 (Human vs Human)</option>
                 </select>
             </div>
+            <div class="setting-group" id="first-player-group" style="display: none;">
+                <label for="first-player">Who goes first:</label>
+                <select id="first-player">
+                    <option value="human">You (Human)</option>
+                    <option value="ai">AI Agent</option>
+                </select>
+            </div>
             <div class="setting-group">
                 <label for="board-size">Board Size:</label>
                 <input type="number" id="board-size" min="3" max="10" value="3">
@@ -486,6 +493,8 @@
         const boardSizeInput = document.getElementById('board-size');
         const winLengthInput = document.getElementById('win-length');
         const humanPlayersSelect = document.getElementById('human-players');
+        const firstPlayerSelect = document.getElementById('first-player');
+        const firstPlayerGroup = document.getElementById('first-player-group');
         const agentX = document.getElementById('agent-x');
         const agentO = document.getElementById('agent-o');
         const agentXName = document.getElementById('agent-x-name');
@@ -510,15 +519,25 @@
 
         function updatePlayerConfig() {
             humanPlayers = parseInt(humanPlayersSelect.value);
+            const humanGoesFirst = firstPlayerSelect.value === 'human';
+            
+            // Show/hide "who goes first" option based on player count
+            firstPlayerGroup.style.display = humanPlayers === 1 ? 'flex' : 'none';
             
             if (humanPlayers === 0) {
                 players.X = { isHuman: false, name: 'Strategic Agent', desc: 'Thinks ahead, blocks threats' };
                 players.O = { isHuman: false, name: 'Defensive Agent', desc: 'Analyzes board, counters moves' };
                 playerModeInfo.textContent = 'AI vs AI - Watch the agents battle!';
             } else if (humanPlayers === 1) {
-                players.X = { isHuman: true, name: 'Player 1', desc: 'Click a cell to place your mark' };
-                players.O = { isHuman: false, name: 'AI Opponent', desc: 'Strategic AI agent' };
-                playerModeInfo.textContent = 'Human (X) vs AI (O) - You play first!';
+                if (humanGoesFirst) {
+                    players.X = { isHuman: true, name: 'You', desc: 'Click a cell to place your mark' };
+                    players.O = { isHuman: false, name: 'AI Opponent', desc: 'Strategic AI agent' };
+                    playerModeInfo.textContent = 'You (X) vs AI (O) - You play first!';
+                } else {
+                    players.X = { isHuman: false, name: 'AI Opponent', desc: 'Strategic AI agent' };
+                    players.O = { isHuman: true, name: 'You', desc: 'Click a cell to place your mark' };
+                    playerModeInfo.textContent = 'AI (X) vs You (O) - AI plays first!';
+                }
             } else {
                 players.X = { isHuman: true, name: 'Player 1', desc: 'Click a cell to place your mark' };
                 players.O = { isHuman: true, name: 'Player 2', desc: 'Click a cell to place your mark' };
@@ -537,9 +556,13 @@
             // Update thinking bubbles
             if (players.X.isHuman) {
                 thinkingX.innerHTML = '<div class="thought">Your turn - click a cell!</div>';
+            } else {
+                thinkingX.innerHTML = '<div class="thought">Waiting...</div>';
             }
             if (players.O.isHuman) {
                 thinkingO.innerHTML = '<div class="thought">Your turn - click a cell!</div>';
+            } else {
+                thinkingO.innerHTML = '<div class="thought">Waiting...</div>';
             }
         }
 
@@ -1153,6 +1176,7 @@
             boardSizeInput.disabled = true;
             winLengthInput.disabled = true;
             humanPlayersSelect.disabled = true;
+            firstPlayerSelect.disabled = true;
             
             resetGame();
             log(`--- New Game (${boardSize}x${boardSize}, ${winLength} to win) ---`, '');
@@ -1185,6 +1209,7 @@
             boardSizeInput.disabled = true;
             winLengthInput.disabled = true;
             humanPlayersSelect.disabled = true;
+            firstPlayerSelect.disabled = true;
             
             for (let i = 1; i <= count; i++) {
                 currentGameNumber = i;
@@ -1210,6 +1235,7 @@
             boardSizeInput.disabled = false;
             winLengthInput.disabled = false;
             humanPlayersSelect.disabled = false;
+            firstPlayerSelect.disabled = false;
         }
 
         // Re-enable controls when game ends (for human games)
@@ -1220,6 +1246,7 @@
             boardSizeInput.disabled = false;
             winLengthInput.disabled = false;
             humanPlayersSelect.disabled = false;
+            firstPlayerSelect.disabled = false;
         }
 
         // Update win length max when board size changes
@@ -1239,6 +1266,7 @@
         });
 
         humanPlayersSelect.addEventListener('change', updatePlayerConfig);
+        firstPlayerSelect.addEventListener('change', updatePlayerConfig);
 
         // Event listeners
         startBtn.addEventListener('click', startGame);
