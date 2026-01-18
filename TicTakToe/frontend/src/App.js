@@ -5,7 +5,7 @@ import GameLog from './components/GameLog';
 import Settings from './components/Settings';
 import './App.css';
 
-const API_BASE = 'http://localhost:8080/api/game';
+const API_BASE = 'http://localhost:8000/api/game';
 
 function App() {
   const [gameState, setGameState] = useState(null);
