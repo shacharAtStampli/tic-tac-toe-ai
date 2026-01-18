@@ -1,0 +1,46 @@
+.game-log {
+  margin-top: 30px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 15px;
+  max-height: 200px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.game-log h4 {
+  color: #888;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.log-entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-entry {
+  color: #ccc;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-entry.x-move {
+  color: #e94560;
+}
+
+.log-entry.o-move {
+  color: #0ea5e9;
+}
+
+.log-entry.result {
+  color: #4ade80;
+  font-weight: bold;
+}
