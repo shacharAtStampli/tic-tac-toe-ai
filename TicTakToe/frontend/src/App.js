@@ -49,7 +49,7 @@ function App() {
       // If it's AI's turn, make AI move
       if (data && !data.gameOver) {
         const currentPlayerConfig = data.currentPlayer === 'X' ? data.playerX : data.playerO;
-        if (!currentPlayerConfig.isHuman) {
+        if (!currentPlayerConfig.human) {
           setTimeout(() => makeAIMove(), speed / 2);
         }
       }
@@ -63,7 +63,7 @@ function App() {
     if (!gameState || gameState.gameOver) return;
     
     const currentPlayerConfig = gameState.currentPlayer === 'X' ? gameState.playerX : gameState.playerO;
-    if (!currentPlayerConfig.isHuman) return;
+    if (!currentPlayerConfig.human) return;
 
     try {
       const response = await fetch(`${API_BASE}/move`, {
@@ -84,7 +84,7 @@ function App() {
       } else {
         // If next player is AI, make AI move
         const nextPlayerConfig = data.currentPlayer === 'X' ? data.playerX : data.playerO;
-        if (!nextPlayerConfig.isHuman) {
+        if (!nextPlayerConfig.human) {
           setTimeout(() => makeAIMove(), speed / 2);
         }
       }
@@ -114,7 +114,7 @@ function App() {
       } else {
         // If next player is also AI, continue
         const nextPlayerConfig = data.currentPlayer === 'X' ? data.playerX : data.playerO;
-        if (!nextPlayerConfig.isHuman) {
+        if (!nextPlayerConfig.human) {
           setTimeout(() => makeAIMove(), speed);
         }
       }
@@ -148,7 +148,7 @@ function App() {
     if (gameState.gameOver) return gameState.status;
     
     const currentConfig = getCurrentPlayerConfig();
-    if (currentConfig?.isHuman) {
+    if (currentConfig?.human) {
       return `${currentConfig.name}'s turn - click a cell!`;
     }
     return `${currentConfig?.name} is thinking...`;
@@ -215,7 +215,7 @@ function App() {
         boardSize={gameState?.boardSize || config.boardSize}
         onCellClick={makeMove}
         winningPattern={gameState?.winningPattern}
-        isClickable={gameState && !gameState.gameOver && getCurrentPlayerConfig()?.isHuman}
+        isClickable={gameState && !gameState.gameOver && getCurrentPlayerConfig()?.human}
         currentPlayer={gameState?.currentPlayer}
       />
 

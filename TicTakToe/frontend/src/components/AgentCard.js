@@ -2,7 +2,7 @@ import React from 'react';
 import './AgentCard.css';
 
 function AgentCard({ player, config, isActive, thoughts, currentPlayer }) {
-  const isHuman = config?.isHuman || false;
+  const isHuman = config?.human || false;
   const name = config?.name || (player === 'X' ? 'Strategic Agent' : 'Defensive Agent');
   const description = config?.description || '';
 
