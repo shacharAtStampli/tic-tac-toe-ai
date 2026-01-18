@@ -2,7 +2,17 @@ import React from 'react';
 import './Board.css';
 
 function Board({ board, boardSize, onCellClick, winningPattern, isClickable, currentPlayer }) {
-  const fontSize = Math.max(1.5, 4 - (boardSize - 3) * 0.5);
+  // Calculate actual grid size from board length (more reliable)
+  const actualSize = board.length > 0 ? Math.sqrt(board.length) : boardSize;
+  const gridSize = Math.floor(actualSize);
+  
+  // Generate cells - use actual board if available, otherwise create empty placeholder
+  const cells = board.length > 0 
+    ? board 
+    : Array(boardSize * boardSize).fill('');
+  
+  const displaySize = board.length > 0 ? gridSize : boardSize;
+  const fontSize = Math.max(1.2, 3.5 - (displaySize - 3) * 0.4);
   
   const isWinningCell = (index) => {
     if (!winningPattern) return false;
@@ -13,9 +23,9 @@ function Board({ board, boardSize, onCellClick, winningPattern, isClickable, cur
     <div className="board-container">
       <div 
         className="board" 
-        style={{ gridTemplateColumns: `repeat(${boardSize}, 1fr)` }}
+        style={{ gridTemplateColumns: `repeat(${displaySize}, 1fr)` }}
       >
-        {board.map((cell, index) => (
+        {cells.map((cell, index) => (
           <div
             key={index}
             className={`cell 

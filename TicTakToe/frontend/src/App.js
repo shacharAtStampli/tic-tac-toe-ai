@@ -158,6 +158,20 @@ function App() {
     fetchGameState();
   }, []);
 
+  // Reset board preview when config changes (before game starts)
+  useEffect(() => {
+    if (!isPlaying) {
+      // Update local preview board to match config
+      setGameState(prev => prev ? {
+        ...prev,
+        board: Array(config.boardSize * config.boardSize).fill(''),
+        boardSize: config.boardSize,
+        winLength: config.winLength,
+        gameOver: true // Mark as over so it's not clickable
+      } : null);
+    }
+  }, [config.boardSize, config.winLength, isPlaying]);
+
   return (
     <div className="container">
       <h1>Tic Tac Toe</h1>
@@ -197,8 +211,8 @@ function App() {
       </div>
 
       <Board 
-        board={gameState?.board || []}
-        boardSize={config.boardSize}
+        board={gameState?.board || Array(config.boardSize * config.boardSize).fill('')}
+        boardSize={gameState?.boardSize || config.boardSize}
         onCellClick={makeMove}
         winningPattern={gameState?.winningPattern}
         isClickable={gameState && !gameState.gameOver && getCurrentPlayerConfig()?.isHuman}
