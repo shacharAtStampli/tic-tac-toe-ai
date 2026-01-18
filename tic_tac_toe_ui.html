@@ -54,6 +54,7 @@
             flex: 1;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
         }
 
         .agent-card.x {
@@ -83,10 +84,19 @@
             font-size: 0.85rem;
         }
 
+        .agent-card.human {
+            border-style: dashed;
+        }
+
+        .agent-card.human h3::after {
+            content: ' (You)';
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
         .agent-card.active {
             box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
             transform: scale(1.05);
-            transition: all 0.3s ease;
         }
 
         .agent-card.o.active {
@@ -153,6 +163,15 @@
             position: relative;
         }
 
+        .cell.clickable {
+            cursor: pointer;
+        }
+
+        .cell.clickable:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+
         .cell.x {
             color: #e94560;
             text-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
@@ -212,6 +231,11 @@
 
         .status.draw {
             color: #fbbf24;
+        }
+
+        .status.your-turn {
+            color: #a78bfa;
+            font-weight: bold;
         }
 
         .controls {
@@ -352,6 +376,13 @@
             font-size: 0.85rem;
             margin-bottom: 10px;
         }
+
+        .player-mode-info {
+            color: #a78bfa;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -361,15 +392,15 @@
 
         <div class="agents-info">
             <div class="agent-card x" id="agent-x">
-                <h3>X - Strategic Agent</h3>
-                <p>Thinks ahead, blocks threats</p>
+                <h3 id="agent-x-name">X - Strategic Agent</h3>
+                <p id="agent-x-desc">Thinks ahead, blocks threats</p>
                 <div class="thinking-bubble" id="thinking-x">
                     <div class="thought">Waiting...</div>
                 </div>
             </div>
             <div class="agent-card o" id="agent-o">
-                <h3>O - Defensive Agent</h3>
-                <p>Analyzes board, counters moves</p>
+                <h3 id="agent-o-name">O - Defensive Agent</h3>
+                <p id="agent-o-desc">Analyzes board, counters moves</p>
                 <div class="thinking-bubble" id="thinking-o">
                     <div class="thought">Waiting...</div>
                 </div>
@@ -377,6 +408,14 @@
         </div>
 
         <div class="settings">
+            <div class="setting-group">
+                <label for="human-players">Human Players:</label>
+                <select id="human-players">
+                    <option value="0">0 (AI vs AI)</option>
+                    <option value="1">1 (Human vs AI)</option>
+                    <option value="2">2 (Human vs Human)</option>
+                </select>
+            </div>
             <div class="setting-group">
                 <label for="board-size">Board Size:</label>
                 <input type="number" id="board-size" min="3" max="10" value="3">
@@ -386,7 +425,7 @@
                 <input type="number" id="win-length" min="3" max="10" value="3">
             </div>
             <div class="setting-group">
-                <label for="speed">Speed:</label>
+                <label for="speed">AI Speed:</label>
                 <select id="speed">
                     <option value="1500">Slow</option>
                     <option value="800" selected>Normal</option>
@@ -396,8 +435,9 @@
         </div>
 
         <div class="board-info" id="board-info">3x3 board - 3 in a row to win</div>
+        <div class="player-mode-info" id="player-mode-info">AI vs AI - Watch the agents battle!</div>
 
-        <div class="game-counter" id="game-counter">Game 0 of 0</div>
+        <div class="game-counter" id="game-counter"></div>
 
         <div class="status" id="status">Click "Start Game" to begin</div>
 
@@ -427,6 +467,14 @@
         let currentGameNumber = 0;
         let totalGames = 0;
         let winPatterns = [];
+        let humanPlayers = 0; // 0 = AI vs AI, 1 = Human vs AI, 2 = Human vs Human
+        let waitingForHuman = false;
+
+        // Player configuration
+        let players = {
+            'X': { isHuman: false, name: 'Strategic Agent', desc: 'Thinks ahead, blocks threats' },
+            'O': { isHuman: false, name: 'Defensive Agent', desc: 'Analyzes board, counters moves' }
+        };
 
         // DOM elements
         const boardEl = document.getElementById('board');
@@ -437,12 +485,18 @@
         const speedSelect = document.getElementById('speed');
         const boardSizeInput = document.getElementById('board-size');
         const winLengthInput = document.getElementById('win-length');
+        const humanPlayersSelect = document.getElementById('human-players');
         const agentX = document.getElementById('agent-x');
         const agentO = document.getElementById('agent-o');
+        const agentXName = document.getElementById('agent-x-name');
+        const agentOName = document.getElementById('agent-o-name');
+        const agentXDesc = document.getElementById('agent-x-desc');
+        const agentODesc = document.getElementById('agent-o-desc');
         const thinkingX = document.getElementById('thinking-x');
         const thinkingO = document.getElementById('thinking-o');
         const gameCounter = document.getElementById('game-counter');
         const boardInfo = document.getElementById('board-info');
+        const playerModeInfo = document.getElementById('player-mode-info');
 
         function getSpeed() {
             return parseInt(speedSelect.value);
@@ -452,6 +506,41 @@
             const row = Math.floor(index / boardSize);
             const col = index % boardSize;
             return `(${row + 1}, ${col + 1})`;
+        }
+
+        function updatePlayerConfig() {
+            humanPlayers = parseInt(humanPlayersSelect.value);
+            
+            if (humanPlayers === 0) {
+                players.X = { isHuman: false, name: 'Strategic Agent', desc: 'Thinks ahead, blocks threats' };
+                players.O = { isHuman: false, name: 'Defensive Agent', desc: 'Analyzes board, counters moves' };
+                playerModeInfo.textContent = 'AI vs AI - Watch the agents battle!';
+            } else if (humanPlayers === 1) {
+                players.X = { isHuman: true, name: 'Player 1', desc: 'Click a cell to place your mark' };
+                players.O = { isHuman: false, name: 'AI Opponent', desc: 'Strategic AI agent' };
+                playerModeInfo.textContent = 'Human (X) vs AI (O) - You play first!';
+            } else {
+                players.X = { isHuman: true, name: 'Player 1', desc: 'Click a cell to place your mark' };
+                players.O = { isHuman: true, name: 'Player 2', desc: 'Click a cell to place your mark' };
+                playerModeInfo.textContent = 'Human vs Human - Take turns!';
+            }
+            
+            // Update UI
+            agentXName.textContent = `X - ${players.X.name}`;
+            agentOName.textContent = `O - ${players.O.name}`;
+            agentXDesc.textContent = players.X.desc;
+            agentODesc.textContent = players.O.desc;
+            
+            agentX.classList.toggle('human', players.X.isHuman);
+            agentO.classList.toggle('human', players.O.isHuman);
+            
+            // Update thinking bubbles
+            if (players.X.isHuman) {
+                thinkingX.innerHTML = '<div class="thought">Your turn - click a cell!</div>';
+            }
+            if (players.O.isHuman) {
+                thinkingO.innerHTML = '<div class="thought">Your turn - click a cell!</div>';
+            }
         }
 
         // Generate all win patterns for current board size and win length
@@ -517,8 +606,43 @@
                 cell.className = 'cell';
                 cell.dataset.index = i;
                 cell.style.fontSize = `${fontSize}rem`;
+                cell.addEventListener('click', () => handleCellClick(i));
                 boardEl.appendChild(cell);
             }
+        }
+
+        function handleCellClick(index) {
+            // Only allow clicks if it's a human's turn and the cell is empty
+            if (!isPlaying || gameOver || !waitingForHuman) return;
+            if (!players[currentPlayer].isHuman) return;
+            if (board[index] !== '') return;
+            
+            // Make the human move
+            makeHumanMove(index);
+        }
+
+        async function makeHumanMove(index) {
+            waitingForHuman = false;
+            
+            const playerName = players[currentPlayer].name;
+            board[index] = currentPlayer;
+            log(`${playerName} (${currentPlayer}) → ${getPositionName(index)}`, currentPlayer === 'X' ? 'x-move' : 'o-move');
+            
+            updateBoard();
+            const cells = document.querySelectorAll('.cell');
+            cells[index].classList.add('new-move');
+            
+            // Update thinking bubble
+            const thinkingEl = currentPlayer === 'X' ? thinkingX : thinkingO;
+            thinkingEl.innerHTML = `<div class="thought">Placed at ${getPositionName(index)}</div>`;
+            
+            // Check game end conditions
+            if (await checkGameEnd()) return;
+            
+            // Switch player and continue
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            await new Promise(resolve => setTimeout(resolve, 300));
+            await playTurn();
         }
 
         function log(message, className = '') {
@@ -536,8 +660,16 @@
         }
 
         function clearThinking() {
-            thinkingX.innerHTML = '<div class="thought">Waiting...</div>';
-            thinkingO.innerHTML = '<div class="thought">Waiting...</div>';
+            if (players.X.isHuman) {
+                thinkingX.innerHTML = '<div class="thought">Your turn - click a cell!</div>';
+            } else {
+                thinkingX.innerHTML = '<div class="thought">Waiting...</div>';
+            }
+            if (players.O.isHuman) {
+                thinkingO.innerHTML = '<div class="thought">Your turn - click a cell!</div>';
+            } else {
+                thinkingO.innerHTML = '<div class="thought">Waiting...</div>';
+            }
             thinkingX.classList.remove('active');
             thinkingO.classList.remove('active');
         }
@@ -551,6 +683,11 @@
                 cell.style.fontSize = `${fontSize}rem`;
                 if (board[i] === 'X') cell.classList.add('x');
                 if (board[i] === 'O') cell.classList.add('o');
+                
+                // Make empty cells clickable if waiting for human
+                if (board[i] === '' && waitingForHuman && players[currentPlayer].isHuman) {
+                    cell.classList.add('clickable');
+                }
             });
         }
 
@@ -562,7 +699,7 @@
         function clearHighlights() {
             const cells = document.querySelectorAll('.cell');
             cells.forEach(cell => {
-                cell.classList.remove('threat', 'opportunity');
+                cell.classList.remove('threat', 'opportunity', 'clickable');
             });
         }
 
@@ -584,7 +721,11 @@
         function isDraw() {
             return !board.includes('') && !checkWinner();
         }
-        
+
+        function getAvailableMoves() {
+            return board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+        }
+
         // Check if a player can still potentially win
         function canPlayerWin(player) {
             const opponent = player === 'X' ? 'O' : 'X';
@@ -605,10 +746,6 @@
             const xCanWin = canPlayerWin('X');
             const oCanWin = canPlayerWin('O');
             return { xCanWin, oCanWin, anyCanWin: xCanWin || oCanWin };
-        }
-
-        function getAvailableMoves() {
-            return board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
         }
 
         // Check if a player can win in one move - returns the winning position or null
@@ -872,14 +1009,74 @@
             thinkingO.classList.toggle('active', currentPlayer === 'O' && !gameOver);
         }
 
-        async function makeMove() {
+        async function checkGameEnd() {
+            const winResult = checkWinner();
+            if (winResult) {
+                gameOver = true;
+                highlightWinner(winResult.pattern);
+                const winnerName = `${players[winResult.winner].name} (${winResult.winner})`;
+                statusEl.textContent = `${winnerName} wins!`;
+                statusEl.className = 'status winner';
+                log(`🏆 ${winnerName} wins!`, 'result');
+                updateAgentHighlight();
+                clearThinking();
+                enableControls();
+                return true;
+            }
+
+            // Check if the game is still winnable
+            const winnableStatus = isGameStillWinnable();
+            if (!winnableStatus.anyCanWin) {
+                gameOver = true;
+                const emptyCount = board.filter(c => c === '').length;
+                statusEl.textContent = `Draw detected early! No possible wins remaining.`;
+                statusEl.className = 'status draw';
+                log(`🔍 Analysis: Neither player can win anymore`, 'thinking');
+                log(`🤝 Early draw - ${emptyCount} empty cells but no winning paths!`, 'result');
+                updateAgentHighlight();
+                clearThinking();
+                enableControls();
+                return true;
+            }
+
+            if (isDraw()) {
+                gameOver = true;
+                statusEl.textContent = "It's a draw! Both played well!";
+                statusEl.className = 'status draw';
+                log("🤝 Game ended in a draw - great defense!", 'result');
+                updateAgentHighlight();
+                clearThinking();
+                enableControls();
+                return true;
+            }
+            
+            return false;
+        }
+
+        async function playTurn() {
             if (gameOver) return;
 
             updateAgentHighlight();
             clearHighlights();
             
-            const agentName = currentPlayer === 'X' ? 'Strategic (X)' : 'Defensive (O)';
-            statusEl.textContent = `${agentName} is thinking...`;
+            const playerConfig = players[currentPlayer];
+            const playerName = `${playerConfig.name} (${currentPlayer})`;
+            
+            if (playerConfig.isHuman) {
+                // Human's turn - wait for click
+                waitingForHuman = true;
+                statusEl.textContent = `${playerName}'s turn - click a cell!`;
+                statusEl.className = 'status your-turn';
+                
+                const thinkingEl = currentPlayer === 'X' ? thinkingX : thinkingO;
+                thinkingEl.innerHTML = '<div class="thought">Your turn!</div><div class="thought strategy">Click an empty cell to place your mark</div>';
+                
+                updateBoard(); // This will add 'clickable' class to empty cells
+                return; // Wait for human input
+            }
+            
+            // AI's turn
+            statusEl.textContent = `${playerName} is thinking...`;
             
             // Show thinking process
             await new Promise(resolve => setTimeout(resolve, getSpeed() / 2));
@@ -902,54 +1099,20 @@
             
             // Make the move
             board[result.move] = currentPlayer;
-            log(`${agentName} → ${getPositionName(result.move)} (${result.reason})`, currentPlayer === 'X' ? 'x-move' : 'o-move');
+            log(`${playerName} → ${getPositionName(result.move)} (${result.reason})`, currentPlayer === 'X' ? 'x-move' : 'o-move');
             
             updateBoard();
             const cells = document.querySelectorAll('.cell');
             cells[result.move].classList.add('new-move');
             clearHighlights();
 
-            const winResult = checkWinner();
-            if (winResult) {
-                gameOver = true;
-                highlightWinner(winResult.pattern);
-                const winnerName = winResult.winner === 'X' ? 'Strategic (X)' : 'Defensive (O)';
-                statusEl.textContent = `${winnerName} wins!`;
-                statusEl.className = 'status winner';
-                log(`🏆 ${winnerName} wins!`, 'result');
-                updateAgentHighlight();
-                clearThinking();
-                return;
-            }
-
-            // Check if the game is still winnable
-            const winnableStatus = isGameStillWinnable();
-            if (!winnableStatus.anyCanWin) {
-                gameOver = true;
-                const emptyCount = board.filter(c => c === '').length;
-                statusEl.textContent = `Draw detected early! No possible wins remaining.`;
-                statusEl.className = 'status draw';
-                log(`🔍 Analysis: Neither player can win anymore`, 'thinking');
-                log(`🤝 Early draw - ${emptyCount} empty cells but no winning paths!`, 'result');
-                updateAgentHighlight();
-                clearThinking();
-                return;
-            }
-
-            if (isDraw()) {
-                gameOver = true;
-                statusEl.textContent = "It's a draw! Both agents played well!";
-                statusEl.className = 'status draw';
-                log("🤝 Game ended in a draw - great defense!", 'result');
-                updateAgentHighlight();
-                clearThinking();
-                return;
-            }
+            // Check game end conditions
+            if (await checkGameEnd()) return;
 
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             
             await new Promise(resolve => setTimeout(resolve, 200));
-            await makeMove();
+            await playTurn();
         }
 
         function initializeGame() {
@@ -966,12 +1129,14 @@
             generateWinPatterns();
             createBoard();
             updateBoard();
+            updatePlayerConfig();
         }
 
         function resetGame() {
             initializeGame();
             currentPlayer = 'X';
             gameOver = false;
+            waitingForHuman = false;
             clearHighlights();
             clearThinking();
             statusEl.textContent = 'Starting...';
@@ -987,28 +1152,39 @@
             playTwoBtn.disabled = true;
             boardSizeInput.disabled = true;
             winLengthInput.disabled = true;
+            humanPlayersSelect.disabled = true;
             
             resetGame();
             log(`--- New Game (${boardSize}x${boardSize}, ${winLength} to win) ---`, '');
             
             await new Promise(resolve => setTimeout(resolve, 500));
-            await makeMove();
+            await playTurn();
             
-            isPlaying = false;
-            startBtn.disabled = false;
-            playTwoBtn.disabled = false;
-            boardSizeInput.disabled = false;
-            winLengthInput.disabled = false;
+            // Only re-enable if game is over (not waiting for human)
+            if (gameOver) {
+                isPlaying = false;
+                startBtn.disabled = false;
+                playTwoBtn.disabled = false;
+                boardSizeInput.disabled = false;
+                winLengthInput.disabled = false;
+                humanPlayersSelect.disabled = false;
+            }
         }
 
         async function playMultipleGames(count) {
             if (isPlaying) return;
+            if (humanPlayers > 0) {
+                // Can't auto-play multiple games with human players
+                alert('Multiple games mode is only available for AI vs AI (0 human players)');
+                return;
+            }
             
             totalGames = count;
             startBtn.disabled = true;
             playTwoBtn.disabled = true;
             boardSizeInput.disabled = true;
             winLengthInput.disabled = true;
+            humanPlayersSelect.disabled = true;
             
             for (let i = 1; i <= count; i++) {
                 currentGameNumber = i;
@@ -1019,7 +1195,7 @@
                 log(`--- Game ${i} of ${count} (${boardSize}x${boardSize}) ---`, '');
                 
                 await new Promise(resolve => setTimeout(resolve, 500));
-                await makeMove();
+                await playTurn();
                 
                 isPlaying = false;
                 
@@ -1033,6 +1209,17 @@
             playTwoBtn.disabled = false;
             boardSizeInput.disabled = false;
             winLengthInput.disabled = false;
+            humanPlayersSelect.disabled = false;
+        }
+
+        // Re-enable controls when game ends (for human games)
+        function enableControls() {
+            isPlaying = false;
+            startBtn.disabled = false;
+            playTwoBtn.disabled = false;
+            boardSizeInput.disabled = false;
+            winLengthInput.disabled = false;
+            humanPlayersSelect.disabled = false;
         }
 
         // Update win length max when board size changes
@@ -1050,6 +1237,8 @@
             const size = parseInt(boardSizeInput.value) || 3;
             boardInfo.textContent = `${size}x${size} board - ${len} in a row to win`;
         });
+
+        humanPlayersSelect.addEventListener('change', updatePlayerConfig);
 
         // Event listeners
         startBtn.addEventListener('click', startGame);
