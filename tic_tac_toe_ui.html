@@ -416,13 +416,6 @@
                     <option value="2">2 (Human vs Human)</option>
                 </select>
             </div>
-            <div class="setting-group" id="first-player-group" style="display: none;">
-                <label for="first-player">Who goes first:</label>
-                <select id="first-player">
-                    <option value="human">You (Human)</option>
-                    <option value="ai">AI Agent</option>
-                </select>
-            </div>
             <div class="setting-group">
                 <label for="board-size">Board Size:</label>
                 <input type="number" id="board-size" min="3" max="10" value="3">
@@ -476,6 +469,8 @@
         let winPatterns = [];
         let humanPlayers = 0; // 0 = AI vs AI, 1 = Human vs AI, 2 = Human vs Human
         let waitingForHuman = false;
+        let firstPlayerHistory = []; // Track who went first to ensure fairness
+        let humanGoesFirst = true; // Current game's first player decision
 
         // Player configuration
         let players = {
@@ -493,8 +488,6 @@
         const boardSizeInput = document.getElementById('board-size');
         const winLengthInput = document.getElementById('win-length');
         const humanPlayersSelect = document.getElementById('human-players');
-        const firstPlayerSelect = document.getElementById('first-player');
-        const firstPlayerGroup = document.getElementById('first-player-group');
         const agentX = document.getElementById('agent-x');
         const agentO = document.getElementById('agent-o');
         const agentXName = document.getElementById('agent-x-name');
@@ -517,18 +510,43 @@
             return `(${row + 1}, ${col + 1})`;
         }
 
-        function updatePlayerConfig() {
-            humanPlayers = parseInt(humanPlayersSelect.value);
-            const humanGoesFirst = firstPlayerSelect.value === 'human';
+        // Decide who goes first with fairness constraint (no more than 2 same choices in a row)
+        function decideWhoGoesFirst() {
+            // Check last two games
+            const lastTwo = firstPlayerHistory.slice(-2);
             
-            // Show/hide "who goes first" option based on player count
-            firstPlayerGroup.style.display = humanPlayers === 1 ? 'flex' : 'none';
+            if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
+                // Same choice happened twice in a row, force the opposite
+                humanGoesFirst = !lastTwo[0];
+            } else {
+                // Random choice
+                humanGoesFirst = Math.random() < 0.5;
+            }
+            
+            // Record this choice
+            firstPlayerHistory.push(humanGoesFirst);
+            
+            // Keep history limited to last 10 games
+            if (firstPlayerHistory.length > 10) {
+                firstPlayerHistory.shift();
+            }
+            
+            return humanGoesFirst;
+        }
+
+        function updatePlayerConfig(forGameStart = false) {
+            humanPlayers = parseInt(humanPlayersSelect.value);
             
             if (humanPlayers === 0) {
                 players.X = { isHuman: false, name: 'Strategic Agent', desc: 'Thinks ahead, blocks threats' };
                 players.O = { isHuman: false, name: 'Defensive Agent', desc: 'Analyzes board, counters moves' };
                 playerModeInfo.textContent = 'AI vs AI - Watch the agents battle!';
             } else if (humanPlayers === 1) {
+                // Only decide randomly when actually starting a game
+                if (forGameStart) {
+                    decideWhoGoesFirst();
+                }
+                
                 if (humanGoesFirst) {
                     players.X = { isHuman: true, name: 'You', desc: 'Click a cell to place your mark' };
                     players.O = { isHuman: false, name: 'AI Opponent', desc: 'Strategic AI agent' };
@@ -1152,11 +1170,11 @@
             generateWinPatterns();
             createBoard();
             updateBoard();
-            updatePlayerConfig();
         }
 
         function resetGame() {
             initializeGame();
+            updatePlayerConfig(true); // Decide who goes first randomly for Human vs AI
             currentPlayer = 'X';
             gameOver = false;
             waitingForHuman = false;
@@ -1176,7 +1194,6 @@
             boardSizeInput.disabled = true;
             winLengthInput.disabled = true;
             humanPlayersSelect.disabled = true;
-            firstPlayerSelect.disabled = true;
             
             resetGame();
             log(`--- New Game (${boardSize}x${boardSize}, ${winLength} to win) ---`, '');
@@ -1209,7 +1226,6 @@
             boardSizeInput.disabled = true;
             winLengthInput.disabled = true;
             humanPlayersSelect.disabled = true;
-            firstPlayerSelect.disabled = true;
             
             for (let i = 1; i <= count; i++) {
                 currentGameNumber = i;
@@ -1235,7 +1251,6 @@
             boardSizeInput.disabled = false;
             winLengthInput.disabled = false;
             humanPlayersSelect.disabled = false;
-            firstPlayerSelect.disabled = false;
         }
 
         // Re-enable controls when game ends (for human games)
@@ -1246,7 +1261,6 @@
             boardSizeInput.disabled = false;
             winLengthInput.disabled = false;
             humanPlayersSelect.disabled = false;
-            firstPlayerSelect.disabled = false;
         }
 
         // Update win length max when board size changes
@@ -1265,8 +1279,7 @@
             boardInfo.textContent = `${size}x${size} board - ${len} in a row to win`;
         });
 
-        humanPlayersSelect.addEventListener('change', updatePlayerConfig);
-        firstPlayerSelect.addEventListener('change', updatePlayerConfig);
+        humanPlayersSelect.addEventListener('change', () => updatePlayerConfig(false));
 
         // Event listeners
         startBtn.addEventListener('click', startGame);
@@ -1274,6 +1287,7 @@
 
         // Initialize
         initializeGame();
+        updatePlayerConfig(false);
     </script>
 </body>
 </html>
