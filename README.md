@@ -4,6 +4,12 @@ A dynamic Tic Tac Toe game featuring two intelligent AI agents that play against
 
 ## Features
 
+### Flexible Player Modes
+Choose how many human players (0-2), and AI fills the remaining spots:
+- **0 Players (AI vs AI)** - Watch two smart AI agents battle each other
+- **1 Player (Human vs AI)** - Play against a challenging AI opponent
+- **2 Players (Human vs Human)** - Classic local multiplayer
+
 ### Smart AI Agents
 - **Strategic Agent (X)** - Aggressive playstyle with higher exploration
 - **Defensive Agent (O)** - Cautious playstyle focused on blocking
@@ -35,11 +41,13 @@ Both agents use the same intelligent decision-making process:
 
 1. Open `tic_tac_toe_ui.html` in any modern web browser
 2. Configure the game:
+   - **Human Players**: Choose 0 (AI vs AI), 1 (Human vs AI), or 2 (Human vs Human)
    - **Board Size**: Set the grid size (e.g., 5 for a 5x5 board)
    - **Win Length**: Set how many marks in a row are needed to win
-   - **Speed**: Adjust how fast the agents make moves
-3. Click **Start Game** to watch a single game
-4. Click **Play 2 Games** to watch two consecutive games
+   - **AI Speed**: Adjust how fast the AI agents make moves
+3. Click **Start Game** to begin
+4. If playing as human, click empty cells to place your mark
+5. Click **Play 2 Games** to watch consecutive AI vs AI games
 
 ## Visual Features
 
