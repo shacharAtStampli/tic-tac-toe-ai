@@ -1,0 +1,82 @@
+.agent-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 15px 25px;
+  flex: 1;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.agent-card.x {
+  border-color: #e94560;
+}
+
+.agent-card.o {
+  border-color: #0ea5e9;
+}
+
+.agent-card h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.agent-card.x h3 {
+  color: #e94560;
+}
+
+.agent-card.o h3 {
+  color: #0ea5e9;
+}
+
+.agent-card p {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.agent-card.human {
+  border-style: dashed;
+}
+
+.agent-card.active {
+  box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+  transform: scale(1.05);
+}
+
+.agent-card.o.active {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+}
+
+.thinking-bubble {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #aaa;
+  min-height: 60px;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.thinking-bubble.active {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.thinking-bubble .thought {
+  margin: 3px 0;
+}
+
+.thinking-bubble .thought.win {
+  color: #4ade80;
+}
+
+.thinking-bubble .thought.block {
+  color: #fbbf24;
+}
+
+.thinking-bubble .thought.strategy {
+  color: #a78bfa;
+}

@@ -1,0 +1,47 @@
+.settings {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.setting-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #888;
+}
+
+.setting-group label {
+  font-size: 0.9rem;
+}
+
+.setting-group input,
+.setting-group select {
+  padding: 8px 15px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.9rem;
+  width: 80px;
+  text-align: center;
+}
+
+.setting-group select {
+  width: auto;
+  cursor: pointer;
+}
+
+.setting-group input:focus,
+.setting-group select:focus {
+  outline: 2px solid #e94560;
+}
+
+.setting-group input:disabled,
+.setting-group select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

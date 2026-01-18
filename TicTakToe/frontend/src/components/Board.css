@@ -1,0 +1,56 @@
+.board-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.board {
+  display: grid;
+  gap: 6px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: default;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.cell.clickable {
+  cursor: pointer;
+}
+
+.cell.clickable:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.cell.x {
+  color: #e94560;
+  text-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+  border-color: rgba(233, 69, 96, 0.3);
+}
+
+.cell.o {
+  color: #0ea5e9;
+  text-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.cell.winning {
+  animation: pulse 0.5s ease-in-out infinite alternate;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
